@@ -23,6 +23,11 @@
 #ifdef ENABLE_MESSENGER
 bool stop_mdc_flag=0;
 
+#ifdef ENABLE_MDC1200
+// MDC1200 external variables and functions
+extern uint16_t mdc1200_unit_id;
+extern bool mdc1200_contact_find(uint16_t unit_id, char *contact);
+#endif
 
 
 //bool stop_mdc_rx=0;
@@ -362,8 +367,8 @@ void MSG_Send(const char *txMessage, bool bServiceMessage) {
 
         //RADIO_SetTxParameters();
         FUNCTION_Select(FUNCTION_TRANSMIT);
-        SYSTEM_DelayMs(300);
-        BK4819_send_MDC1200(1, 0x80, gEeprom.MDC1200_ID, 6);
+        SYSTEM_DelayMs(250);
+        BK4819_send_MDC1200(1, 0x80, gEeprom.MDC1200_ID, 7);
         SYSTEM_DelayMs(100);
 
         MSG_FSKSendData();
@@ -664,15 +669,54 @@ void solve_sign(const uint16_t interrupt_bits) {
                 {
                     moveUP(rxMessage);
                     show_flag=1;
-                    // Format message with MDC1200 contact or unit ID
+                     // Format message with MDC1200 contact or unit ID
                     #ifdef ENABLE_MDC1200
+                    // Declare variables for contact lookup
+                    char mdc_contact[15];
+                    bool has_contact = false;
+                    char prefix[20] = "";  // For the ID/contact prefix
+                    
+                    // Try to find contact name for this unit ID
                     if (mdc1200_unit_id != 0) {
-                        // Show unit ID
-                        snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "(%04X)< %s", mdc1200_unit_id, &msgFSKBuffer[2]);
-                    } else {
-                        // No MDC1200 info available
-                        snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "< %s", &msgFSKBuffer[2]);
+                        has_contact = mdc1200_contact_find(mdc1200_unit_id, mdc_contact);
                     }
+                    
+                    if (has_contact && mdc_contact[0] != '\0') {
+                        // Remove trailing spaces from contact name
+                        int len = strlen(mdc_contact);
+                        while (len > 0 && mdc_contact[len - 1] == ' ') {
+                            mdc_contact[len - 1] = '\0';
+                            len--;
+                        }
+                        snprintf(prefix, sizeof(prefix), "(%s)", mdc_contact);
+                    } else if (mdc1200_unit_id != 0) {
+                        snprintf(prefix, sizeof(prefix), "(%04X)", mdc1200_unit_id);
+                    }
+                    
+                    // Calculate total length: prefix + "< " + message
+                    int prefix_len = strlen(prefix);
+                    int msg_len = strlen(&msgFSKBuffer[2]);
+                    int total_len = prefix_len + 2 + msg_len;  // +2 for "< "
+                    
+                    // Display width is approximately 21 characters
+                    const int max_line_chars = 21;
+                    
+                    if (total_len > max_line_chars && prefix_len > 0) {
+                        // Too long - split into two lines
+                        // Line 1: Contact/ID only
+                        snprintf(rxMessage[3], MAX_RX_MSG_LENGTH + 2, "%s", prefix);
+                        // Line 2: Message on next line
+                        moveUP(rxMessage);
+                        snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "< %s", &msgFSKBuffer[2]);
+                    } else {
+                        // Fits on one line
+                        if (prefix_len > 0) {
+                            snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "%s< %s", prefix, &msgFSKBuffer[2]);
+                        } else {
+                            snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "< %s", &msgFSKBuffer[2]);
+                        }
+                    }
+                    
                     #else
                     snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "< %s", &msgFSKBuffer[2]);
                     #endif
