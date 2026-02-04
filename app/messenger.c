@@ -365,6 +365,8 @@ void MSG_Send(const char *txMessage, bool bServiceMessage) {
 
         BK4819_DisableDTMF();
 
+        gMuteMic = true;
+
         //RADIO_SetTxParameters();
         FUNCTION_Select(FUNCTION_TRANSMIT);
         SYSTEM_DelayMs(250);
@@ -378,6 +380,8 @@ void MSG_Send(const char *txMessage, bool bServiceMessage) {
         APP_EndTransmission(true); //OK
 
         RADIO_SetVfoState(VFO_STATE_NORMAL);
+
+        gMuteMic = false;
 
         BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, false);
 
@@ -669,18 +673,18 @@ void solve_sign(const uint16_t interrupt_bits) {
                 {
                     moveUP(rxMessage);
                     show_flag=1;
-                     // Format message with MDC1200 contact or unit ID
+                    // Format message with MDC1200 contact or unit ID
                     #ifdef ENABLE_MDC1200
                     // Declare variables for contact lookup
                     char mdc_contact[15];
                     bool has_contact = false;
                     char prefix[20] = "";  // For the ID/contact prefix
-                    
+
                     // Try to find contact name for this unit ID
                     if (mdc1200_unit_id != 0) {
                         has_contact = mdc1200_contact_find(mdc1200_unit_id, mdc_contact);
                     }
-                    
+
                     if (has_contact && mdc_contact[0] != '\0') {
                         // Remove trailing spaces from contact name
                         int len = strlen(mdc_contact);
@@ -692,33 +696,32 @@ void solve_sign(const uint16_t interrupt_bits) {
                     } else if (mdc1200_unit_id != 0) {
                         snprintf(prefix, sizeof(prefix), "(%04X)", mdc1200_unit_id);
                     }
-                    
-                    // Calculate total length: prefix + "< " + message
+
+                    // Calculate total length: prefix + "> " + message (without space after >)
                     int prefix_len = strlen(prefix);
                     int msg_len = strlen(&msgFSKBuffer[2]);
-                    int total_len = prefix_len + 2 + msg_len;  // +2 for "< "
-                    
+                    int total_len = prefix_len + 1 + msg_len;  // +1 for ">"
+
                     // Display width is approximately 21 characters
                     const int max_line_chars = 21;
-                    
+
                     if (total_len > max_line_chars && prefix_len > 0) {
                         // Too long - split into two lines
                         // Line 1: Contact/ID only
                         snprintf(rxMessage[3], MAX_RX_MSG_LENGTH + 2, "%s", prefix);
-                        // Line 2: Message on next line
+                        // Line 2: Message on next line with >
                         moveUP(rxMessage);
-                        snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "< %s", &msgFSKBuffer[2]);
+                        snprintf(rxMessage[3], TX_MSG_LENGTH + 2, ">%s", &msgFSKBuffer[2]);
                     } else {
                         // Fits on one line
                         if (prefix_len > 0) {
-                            snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "%s< %s", prefix, &msgFSKBuffer[2]);
+                            snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "%s>%s", prefix, &msgFSKBuffer[2]);
                         } else {
-                            snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "< %s", &msgFSKBuffer[2]);
+                            snprintf(rxMessage[3], TX_MSG_LENGTH + 2, ">%s", &msgFSKBuffer[2]);
                         }
                     }
-                    
                     #else
-                    snprintf(rxMessage[3], TX_MSG_LENGTH + 2, "< %s", &msgFSKBuffer[2]);
+                    snprintf(rxMessage[3], TX_MSG_LENGTH + 2, ">%s", &msgFSKBuffer[2]);
                     #endif
                     //SYSTEM_DelayMs(500);
                     MSG_Send("\x1b\x1b\x1bRCVD", true);

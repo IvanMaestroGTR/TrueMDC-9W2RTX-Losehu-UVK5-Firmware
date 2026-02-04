@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include "stdbool.h"
+#include "driver/bk4819.h"
 enum FUNCTION_Type_t
 {
 	FUNCTION_FOREGROUND = 0,  // ???
