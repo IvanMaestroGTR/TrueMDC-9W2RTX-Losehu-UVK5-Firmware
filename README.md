@@ -2,7 +2,7 @@
 
 **语言版本: [English](./README_en.md), [中文](./README.md).**
 
-# Bear in mind this firmware is only v1 hardware supported only, porting to other firmware will be planned soon.
+# Bear in mind this firmware is only v1 hardware compatible, porting to other hardware version will be planned soon.
 
 # [K5Web]( https://k5.vicicode.com/)
 * 支持在线固件功能编译，无需安装编译环境！！
