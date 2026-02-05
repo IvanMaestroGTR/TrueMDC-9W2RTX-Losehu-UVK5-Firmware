@@ -227,7 +227,7 @@ void FUNCTION_Transmit() {
         BK4819_start_tone(1175, 60, true, true);
                                     SYSTEM_DelayMs(150);
                                     BK4819_stop_tones(true);
-        BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
+        //BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
         
 #endif
     } else {
@@ -236,7 +236,7 @@ void FUNCTION_Transmit() {
         BK4819_start_tone(1175, 60, true, true);
                                     SYSTEM_DelayMs(150);
                                     BK4819_stop_tones(true);
-        BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
+        //BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
 #endif
     }
 #endif
