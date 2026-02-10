@@ -342,6 +342,7 @@ void MSG_Send(const char *txMessage, bool bServiceMessage) {
         msgStatus = SENDING;
 
         RADIO_SetVfoState(VFO_STATE_NORMAL);
+        BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
         BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, true);
 
 //		memset(msgFSKBuffer, 0, sizeof(msgFSKBuffer));
